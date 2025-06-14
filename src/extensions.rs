@@ -10,8 +10,8 @@ impl ContextExt for Context<'_> {
     /// Gets the data about a voice channel from a command context.
     fn get_voice_channel(&self) -> Result<VoiceState, Error> {
         let user_id = self.author().id;
-        let guild = if let Some(guildRef) = self.guild() {
-            guildRef.clone()
+        let guild = if let Some(guild_ref) = self.guild() {
+            guild_ref.clone()
         } else {
             return Err("Piča však to ani není v guildě.".into());
         };

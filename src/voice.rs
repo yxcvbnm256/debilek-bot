@@ -1,7 +1,6 @@
 use crate::types::{Context, Error};
 use crate::extensions::{ContextExt};
 use poise::{serenity_prelude as serenity};
-use poise::serenity_prelude::Scope::Voice;
 use poise::serenity_prelude::VoiceState;
 use songbird::input::Input;
 use crate::enums::VoiceChannelAction;
