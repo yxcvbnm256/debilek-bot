@@ -9,5 +9,6 @@ pub enum AssetClass {
     Cojetypico,
     Dufka,
     ZesraneHajzle,
-    Misc
+    Misc,
+    Dota
 }

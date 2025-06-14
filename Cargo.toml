@@ -12,3 +12,8 @@ reqwest = { version = "0.12.19", features = ["blocking"] }
 once_cell = "1.19"
 rand = "0.9.1"
 dotenv = "0.15"
+opentelemetry = "0.30.0"
+
+[[bin]]
+name = "debilek-bot"
+path = "src/main.rs"

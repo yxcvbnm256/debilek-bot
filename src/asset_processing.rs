@@ -96,6 +96,23 @@ static ZESRANE_ASSETS: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
     ])
 });
 
+pub async fn dota_autocomplete(
+    _ctx: Context<'_>,
+    partial: &str,
+) -> Vec<String> {
+    DOTA_ASSETS.get_fitting_keys(partial)
+}
+
+static DOTA_ASSETS: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
+    HashMap::from([
+        ("easiestmoney", "dota\\easiestmoney.mp3"),
+        ("echoslammajamma", "dota\\echoslammajamma.mp3"),
+        ("lakad", "dota\\lakad.mp3"),
+        ("nochill", "dota\\nochill.mp3"),
+        ("ojojoj", "dota\\ojojoj.mp3"),
+    ])
+});
+
 static RANDOM_GREETINGS: &'static [&'static str] = &[
     FRANTA_CUS,
     FRANTA_SERVUS,
@@ -117,6 +134,7 @@ pub fn get_asset_file(asset_class: AssetClass, asset_name: &str) -> Result<Input
         AssetClass::Cojetypico => COJETYPICO_ASSETS.get(asset_name),
         AssetClass::Misc => MISC_ASSETS.get(asset_name),   
         AssetClass::ZesraneHajzle => ZESRANE_ASSETS.get(asset_name),
+        AssetClass::Dota => DOTA_ASSETS.get(asset_name),
     };
     
     let Some(asset) = asset else { return Err("Tohle tu nemám, debílku.".into()) };

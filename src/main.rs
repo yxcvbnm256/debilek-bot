@@ -37,6 +37,7 @@ async fn main() {
                 commands::dufka(),
                 commands::cojetypico(),
                 commands::misc(),
+                commands::dota(),
             ],
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler(ctx, event, framework, data))

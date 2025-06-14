@@ -4,6 +4,7 @@ use crate::asset_processing::dufka_autocomplete;
 use crate::asset_processing::zesrane_autocomplete;
 use crate::asset_processing::misc_autocomplete;
 use crate::asset_processing::cojetypico_autocomplete;
+use crate::asset_processing::dota_autocomplete;
 use crate::enums::AssetClass;
 use crate::types::{Context, Error};
 use crate::voice::play;
@@ -22,7 +23,7 @@ pub async fn sound(
         .error_for_status();
     match req {
         Ok(r) => {
-            println!("Status code is {:?}, content {}", r.status().as_str(), r.content_length().unwrap().to_string());
+            println!("Status code is {:?}", r.status().as_str());
             let src = songbird::input::Input::from(r.bytes().await?);
             play(ctx, src).await.or_else(|e| Err(e))?;
             ctx.reply(text).await?;
@@ -100,6 +101,20 @@ pub async fn misc(
     option: String,
 ) -> Result<(), Error> {
     let asset = get_asset_file(AssetClass::Misc, option.as_str())?;
+    play(ctx, asset).await.or_else(|e| Err(e))?;
+    ctx.reply(option).await?;
+    Ok(())
+}
+
+/// Přehraje dota mrtku
+#[poise::command(slash_command, prefix_command)]
+pub async fn dota(
+    ctx: Context<'_>,
+    #[description = "co chceš přehrát"]
+    #[autocomplete = "dota_autocomplete"]
+    option: String,
+) -> Result<(), Error> {
+    let asset = get_asset_file(AssetClass::Dota, option.as_str())?;
     play(ctx, asset).await.or_else(|e| Err(e))?;
     ctx.reply(option).await?;
     Ok(())
