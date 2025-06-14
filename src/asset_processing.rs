@@ -8,9 +8,9 @@ use poise::{serenity_prelude as serenity};
 use rand::seq::IndexedRandom;
 use crate::extensions::HashSetExt;
 
-pub static FRANTA_CUS: &str = "franta\\cus.mp3";
-pub static FRANTA_SERVUS: &str = "franta\\servus.mp3";
-pub static FRANTA_ZDRAVIMTE: &str = "franta\\zdravimte.mp3";
+static FRANTA_CUS: &str = "franta\\cus.mp3";
+static FRANTA_SERVUS: &str = "franta\\servus.mp3";
+static FRANTA_ZDRAVIMTE: &str = "franta\\zdravimte.mp3";
 
 pub async fn franta_autocomplete(
     _ctx: Context<'_>,
@@ -37,7 +37,7 @@ static FRANTA_ASSETS: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
     ])
 });
 
-pub static DUFKA_RASTAFA: &str = "dufka\\rastafa.mp3";
+static DUFKA_RASTAFA: &str = "dufka\\rastafa.mp3";
 
 pub async fn dufka_autocomplete(
     _ctx: Context<'_>,
@@ -73,11 +73,15 @@ pub async fn misc_autocomplete(
     MISC_ASSETS.get_fitting_keys(partial)
 }
 
+static MISC_PANEMACO: &str = "misc\\panemaco.mp3";
+
 static MISC_ASSETS: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
     HashMap::from([
         ("dalsiotazka", "misc\\dalsiotazka.mp3"),
         ("dobrabyla", "misc\\dobrabyla.mp3"),
         ("stavo", "misc\\stavo.mp3"),
+        ("aco", "misc\\aco.mp3"),
+        ("panemaco", MISC_PANEMACO),
     ]) 
 });
 
@@ -121,7 +125,7 @@ static RANDOM_GREETINGS: &'static [&'static str] = &[
 
 static USER_GREETINGS: Lazy<HashMap<u64, Vec<&'static str>>> = Lazy::new(|| {
     HashMap::from([
-        (419115472471064576, vec![DUFKA_RASTAFA]), // maca
+        (419115472471064576, vec![DUFKA_RASTAFA, MISC_PANEMACO]), // maca
         //(serenity::UserId::from(450691668740669450), vec!["./assets/franta/servus.mp3"]), // ja
     ])
 });

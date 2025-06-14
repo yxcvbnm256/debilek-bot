@@ -16,7 +16,6 @@ pub async fn sound(
     #[description = "co chceš přehrát"] text: String,
     #[description = "v jakém jazyku"] lang: Option<String>,
 ) -> Result<(), Error> {
-    println!("přehrávám {}", text);
 
     let req = reqwest::get(format!("https://translate.google.com.vn/translate_tts?ie=UTF-8&q={}&tl={}&client=tw-ob'", text, lang.unwrap_or_else(|| "cs".to_string())))
         .await?
