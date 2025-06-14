@@ -23,11 +23,8 @@ pub async fn sound(
         .error_for_status();
     match req {
         Ok(r) => {
-            println!("Status code is {:?}", r.status().as_str());
             let src = songbird::input::Input::from(r.bytes().await?);
-            play(ctx, src).await.or_else(|e| Err(e))?;
-            ctx.reply(text).await?;
-            Ok(())
+            execute_voice_command(ctx, text, src).await
         },
         Err(e) => {
             println!("{:?}", e.status().unwrap().as_str());
@@ -45,9 +42,7 @@ pub async fn cojetypico(
     option: String,
 ) -> Result<(), Error> {
     let asset = get_asset_file(AssetClass::Cojetypico, option.as_str())?;
-    play(ctx, asset).await.or_else(|e| Err(e))?;
-    ctx.reply(option).await?;
-    Ok(())
+    execute_voice_command(ctx, option, asset).await
 }
 
 /// Přehraje frantu
@@ -59,9 +54,7 @@ pub async fn franta(
     option: String,
 ) -> Result<(), Error> {
     let asset = get_asset_file(AssetClass::Franta, option.as_str())?;
-    play(ctx, asset).await.or_else(|e| Err(e))?;
-    ctx.reply(option).await?;
-    Ok(())
+    execute_voice_command(ctx, option, asset).await
 }
 
 /// Přehraje zesrané hajzle
@@ -73,9 +66,7 @@ pub async fn zesrane(
     option: String,
 ) -> Result<(), Error> {
     let asset = get_asset_file(AssetClass::ZesraneHajzle, option.as_str())?;
-    play(ctx, asset).await.or_else(|e| Err(e))?;
-    ctx.reply(option).await?;
-    Ok(())
+    execute_voice_command(ctx, option, asset).await
 }
 
 /// Přehraje viktora
@@ -87,9 +78,7 @@ pub async fn dufka(
     option: String,
 ) -> Result<(), Error> {
     let asset = get_asset_file(AssetClass::Dufka, option.as_str())?;
-    play(ctx, asset).await.or_else(|e| Err(e))?;
-    ctx.reply(option).await?;
-    Ok(())
+    execute_voice_command(ctx, option, asset).await
 }
 
 /// Přehraje whatever
@@ -101,9 +90,7 @@ pub async fn misc(
     option: String,
 ) -> Result<(), Error> {
     let asset = get_asset_file(AssetClass::Misc, option.as_str())?;
-    play(ctx, asset).await.or_else(|e| Err(e))?;
-    ctx.reply(option).await?;
-    Ok(())
+    execute_voice_command(ctx, option, asset).await
 }
 
 /// Přehraje dota mrtku
@@ -115,7 +102,14 @@ pub async fn dota(
     option: String,
 ) -> Result<(), Error> {
     let asset = get_asset_file(AssetClass::Dota, option.as_str())?;
-    play(ctx, asset).await.or_else(|e| Err(e))?;
-    ctx.reply(option).await?;
+    execute_voice_command(ctx, option, asset).await
+}
+
+async fn execute_voice_command(ctx: Context<'_>, text: String, input: songbird::input::Input) -> Result<(), Error> {
+    play(ctx, input).await.or_else(|e| Err(e))?;
+    ctx.send(poise::CreateReply::default()
+        .content(text)
+        .ephemeral(true)
+    ).await?;
     Ok(())
 }
