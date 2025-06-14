@@ -1,6 +1,7 @@
 use crate::types::{Context, Error};
 use crate::extensions::{ContextExt};
 use poise::{serenity_prelude as serenity};
+use poise::serenity_prelude::Scope::Voice;
 use poise::serenity_prelude::VoiceState;
 use songbird::input::Input;
 use crate::enums::VoiceChannelAction;
@@ -56,18 +57,19 @@ pub fn get_voice_channel_action(
     // an old state exists -> user did not join from fuck-know-where but from a different channel
     if let Some(old_channel) = old {
         // no real change happens, for example, if a user starts streaming
-        if old_channel.channel_id == new.channel_id || new.channel_id.is_some() {            
+        if old_channel.channel_id == new.channel_id {            
             VoiceChannelAction::None
         } else {
             // user might have left
             let Some(old_guild_id) = old_channel.guild_id else { return VoiceChannelAction::None; };
-            let Some(old_voice_channel_id) = old_channel.channel_id else { return VoiceChannelAction::None; };
             let Some(guild) = old_guild_id.to_guild_cached(ctx) else { return VoiceChannelAction::None; };
 
+            // if bot is in no voice channel, do not react
+            let Some(current_voice_channel) = guild.voice_states.get(&self_user_id) else { return VoiceChannelAction::None; };
             let members_in_channel_count = guild
                 .voice_states
                 .iter()
-                .filter(|(key, channel)| channel.channel_id == Some(old_voice_channel_id) && **key != self_user_id)
+                .filter(|(key, channel)| channel.channel_id == current_voice_channel.channel_id && **key != self_user_id)
                 .count();
 
             // user left, and nobody else is in the channel -> fuck off
