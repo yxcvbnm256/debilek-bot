@@ -22,7 +22,7 @@ async fn main() {
     let songbird = songbird::Songbird::serenity();
     dotenv().ok();
     let token = env::var("DISCORD_TOKEN")
-        .expect("DISCORD_TOKEN not set in .env file.");
+        .expect("Invalid discord token.");
     let intents = serenity::GatewayIntents::GUILDS
         | serenity::GatewayIntents::GUILD_MESSAGES
         | serenity::GatewayIntents::MESSAGE_CONTENT

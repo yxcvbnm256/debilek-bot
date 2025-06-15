@@ -25,8 +25,7 @@ impl ContextExt for Context<'_> {
 }
 
 pub trait HashSetExt {
-    fn get_fitting_keys(&self, partial: &str) -> Vec<String>;
-}
+    fn get_fitting_keys(&self, partial: &str) -> Vec<String>; }
 
 impl HashSetExt for HashMap<&str, &str> {
     /// Gets the keys of the hashset that contain the partial string.
@@ -36,5 +35,22 @@ impl HashSetExt for HashMap<&str, &str> {
             .filter(|(_, value)| value.contains(partial))
             .map(|(key, _)| key.to_string())
             .collect()
+    }
+}
+
+/// TODO finish this for generic commands
+pub trait CommandHashSetExt {
+    fn insert_or_update(&self, key: String, value: String) -> HashMap<String, Vec<String>>;
+}
+
+impl CommandHashSetExt for HashMap<String, Vec<String>> {
+    fn insert_or_update(&self, key: String, value: String) -> HashMap<String, Vec<String>> {
+        let mut new_map = self.clone();
+        if let Some(values) = new_map.get_mut(&key) {
+            values.push(value);
+        } else {
+            new_map.insert(key, vec![value]);
+        }
+        new_map
     }
 }

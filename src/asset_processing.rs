@@ -6,7 +6,7 @@ use crate::enums::AssetClass;
 use crate::types::{Context, Error};
 use poise::{serenity_prelude as serenity};
 use rand::seq::IndexedRandom;
-use crate::extensions::HashSetExt;
+use crate::extensions::{HashSetExt};
 
 static FRANTA_CUS: &str = "franta\\cus.mp3";
 static FRANTA_SERVUS: &str = "franta\\servus.mp3";
@@ -169,3 +169,25 @@ fn get_input(asset_name: &str) -> Result<Input, Error> {
     let data = fs::read(path)?;
     Ok(songbird::input::Input::from(data))
 }
+
+/*
+fn visit_dirs(dir: &Path, asset_map: &HashMap<String, Vec<String>>) -> Result<HashMap<String, Vec<String>>, Error> {
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_dir() {
+                asset_map = visit_dirs(&path, asset_map);
+            } else if path.is_file() {
+                
+                let command = path.parent().unwrap().file_name().unwrap().to_string_lossy().to_string();
+                let option = path.file_stem().unwrap().to_string_lossy().to_string();
+                let new_map = asset_map.insert_or_update(command.into(), option);
+                return Ok(new_map)
+                //println!("File: {}, folder {}", option.into(), command);
+            }
+        }
+    }
+    Err("ne".into())
+}*/
