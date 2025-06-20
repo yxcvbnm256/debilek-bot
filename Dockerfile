@@ -22,16 +22,25 @@ COPY . .
 
 
 # Build the application in release mode
-RUN cargo install --path .
+RUN cargo build --release
 
 # Stage 2: Create a minimal image with just the binary
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/debilek-bot/target/release/debilek-bot /usr/local/bin/debilek-bot/
+# Set up working directory
+WORKDIR /app
 
-COPY --from=builder /usr/src/debilek-bot/assets /usr/local/bin/assets
-COPY --from=builder /usr/src/debilek-bot/.env /usr/local/bin/.env
+# Copy binary
+COPY --from=builder /usr/src/debilek-bot/target/release/debilek-bot /usr/local/bin/debilek-bot
+RUN chmod +x /usr/local/bin/debilek-bot
 
+# Copy runtime files (assets and .env)
+COPY --from=builder /usr/src/debilek-bot/assets ./assets
+COPY --from=builder /usr/src/debilek-bot/.env ./.env
+
+EXPOSE 3000
+
+# Set entrypoint
 ENTRYPOINT ["/usr/local/bin/debilek-bot"]

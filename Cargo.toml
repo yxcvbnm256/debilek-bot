@@ -13,6 +13,8 @@ once_cell = "1.19"
 rand = "0.9.1"
 dotenv = "0.15"
 opentelemetry = "0.30.0"
+anyhow = "1.0.98"
+walkdir = "2.5.0"
 
 [[bin]]
 name = "debilek-bot"

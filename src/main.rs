@@ -5,12 +5,15 @@ mod asset_processing;
 mod commands;
 mod voice;
 
+use std::collections::HashMap;
 use std::env;
+use std::path::Path;
 use dotenv::dotenv;
 use poise::{serenity_prelude as serenity};
 use songbird::SerenityInit;
 
-use crate::asset_processing::{choose_greetings};
+use crate::asset_processing::{choose_greetings, discover_audio_structure, visit_dirs};
+use crate::commands::{dota, make_audio_command};
 use crate::enums::VoiceChannelAction;
 use crate::types::Error;
 use crate::types::Data;
@@ -28,9 +31,25 @@ async fn main() {
         | serenity::GatewayIntents::MESSAGE_CONTENT
         | serenity::GatewayIntents::GUILD_VOICE_STATES;
 
+    /*let mut asset_map: HashMap<String, Vec<String>> = HashMap::new();
+    visit_dirs(Path::new("./assets"), &mut asset_map).expect("TODO: panic message");
+
+    for (k, v) in asset_map {
+        println!("{}: {:?}", k, v);
+    }*/
+
+    let assets_path = Path::new("assets");
+    let audio_map = discover_audio_structure(assets_path);
+
+    let commands: Vec<_> = audio_map
+        .iter()
+        .map(|(category, clip_map)| make_audio_command(category.clone(), clip_map.clone()))
+        .collect();
+    
+    
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![
+            /*commands: vec![
                 commands::sound(),
                 commands::franta(),
                 commands::zesrane(),
@@ -38,18 +57,19 @@ async fn main() {
                 commands::cojetypico(),
                 commands::misc(),
                 commands::dota(),
-            ],
+            ],*/
+            commands: commands,
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler(ctx, event, framework, data))
             },
-            ..Default::default()
+            ..Default::default() 
         })
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                //poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 // test for test guild
-                //poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
-                Ok(Data {})
+                poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
+                Ok(Data { audio_map })
             })
         })
         .build();

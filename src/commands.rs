@@ -1,5 +1,13 @@
-use std::env;
+use std::collections::HashMap;
+use std::{env, fs};
+use std::path::PathBuf;
+use anyhow::anyhow;
+use poise::{ApplicationContext, BoxFuture, Command, CommandParameterChoice, SlashArgError};
+use poise::serenity_prelude::{CommandOptionType, CreateAutocompleteResponse, ResolvedOption, ResolvedValue};
+use poise::serenity_prelude::json::to_string;
 use reqwest::Client;
+use songbird::input::Input;
+use songbird::serenity;
 use crate::asset_processing::get_asset_file;
 use crate::asset_processing::franta_autocomplete;
 use crate::asset_processing::dufka_autocomplete;
@@ -8,10 +16,10 @@ use crate::asset_processing::misc_autocomplete;
 use crate::asset_processing::cojetypico_autocomplete;
 use crate::asset_processing::dota_autocomplete;
 use crate::enums::AssetClass;
-use crate::types::{Context, Error};
+use crate::types::{Context, Data, Error};
 use crate::voice::play;
 
-/// Plays stupid voice stuff
+/*/// Plays stupid voice stuff
 #[poise::command(slash_command, prefix_command)]
 pub async fn sound(
     ctx: Context<'_>,
@@ -115,9 +123,9 @@ pub async fn misc(
     let asset = get_asset_file(AssetClass::Misc, option.as_str())?;
     execute_voice_command(ctx, option, asset).await
 }
-
+*/
 /// Plays dota bullshit
-#[poise::command(slash_command, prefix_command)]
+#[poise::command(slash_command)]
 pub async fn dota(
     ctx: Context<'_>,
     #[description = "What to be played"]
@@ -146,4 +154,104 @@ async fn execute_voice_command(ctx: Context<'_>, text: String, input: songbird::
         .ephemeral(true)
     ).await?;
     Ok(())
+}
+
+pub type CommandFuture<'a> = std::pin::Pin<
+    Box<dyn Future<Output = Result<(), poise::FrameworkError<'a, Data, Error>>> + Send + 'a>
+>;
+
+pub fn make_audio_handler(
+    command_name: String,
+) -> for<'a> fn(poise::ApplicationContext<'a, Data, Error>) -> CommandFuture<'a> {
+    fn handler<'a>(
+        ctx: poise::ApplicationContext<'a, Data, Error>,
+    ) -> CommandFuture<'a> {
+        Box::pin(async move {
+            ctx.defer().await;
+            println!("Audio command called");
+            let command = &ctx.command().name;
+            let Some(clip) = get_string_from_resolved(&ctx.args) else {
+                return Ok(());
+            };
+            //let clip = ctx.get_string("clip")?.to_string();
+
+            let all_clips = &ctx.data().audio_map;
+            if let Some(clip_map) = all_clips.get(command) {
+                if let Some(path) = clip_map.get(clip) {
+                    ctx.say(format!("Would play: {}", path.display())).await;
+                    match fs::read(path.clone()) {
+                        Ok(data) => {
+                            play(Context::from(ctx), songbird::input::Input::from(data)).await;
+                            return Ok(())
+                        },
+                        Err(_) => return Ok(())
+                    }
+                } else {
+                    ctx.say("Clip not found").await;
+                }
+            } else {
+                ctx.say("Category not found").await;
+            }
+
+            return Ok(())
+        })
+    }
+
+    handler
+}
+
+fn get_string_from_resolved<'a>(args: &&[ResolvedOption<'a>]) -> Option<&'a str> {
+    let Some(first) = args.first() else { return None };
+    match first.value {
+        ResolvedValue::String(s) => Some(s),
+        _ => None,
+    }
+}
+
+pub fn make_audio_command(
+    command_name: String,
+    clips: HashMap<String, PathBuf>,
+) -> Command<Data, Error> {
+    let choices: Vec<String> = clips.keys().cloned().collect();
+
+    poise::Command {
+        identifying_name: command_name.clone(),
+        name: command_name.clone(),
+        qualified_name: command_name.clone(),
+        source_code_name: command_name.clone(),
+        description: Some("Play a clip from this category".into()),
+        ephemeral: true,
+        parameters: vec![poise::CommandParameter {
+            name: "clip".into(),
+            name_localizations: Default::default(),
+            description: Some("Choose a clip".into()),
+            /*choices: choices.iter().map(|c| CommandParameterChoice {
+                name: c.to_string(),
+                localizations: Default::default(),
+                __non_exhaustive: (),
+            } ).collect(),*/
+            choices: vec!(),
+            autocomplete_callback: Some(my_autocomplete),
+            required: true,
+            channel_types: None,
+            type_setter: Some(|option| option.kind(CommandOptionType::String)),
+            //autocomplete_callback: None,
+            description_localizations: Default::default(),
+            __non_exhaustive: (),
+        }],
+
+        slash_action: Some(make_audio_handler(command_name)),
+        ..Default::default()
+    }
+}
+
+fn my_autocomplete<'a>(
+    ctx: ApplicationContext<'a, Data, Error>,
+    input: &'a str,
+) -> BoxFuture<'a, Result<CreateAutocompleteResponse, SlashArgError>> {
+    Box::pin(async move {
+        println!("Autocomplete called");
+        let mut response = CreateAutocompleteResponse::default();
+        Ok(response)
+    })
 }

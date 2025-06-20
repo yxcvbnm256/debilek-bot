@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use poise::Command;
 use poise::serenity_prelude::VoiceState;
-use crate::types::{Error,Context};
+use crate::types::{Error, Context, SlashCommand};
 
 pub trait ContextExt {
     fn get_voice_channel(&self) -> Result<VoiceState, Error>;
@@ -43,14 +44,13 @@ pub trait CommandHashSetExt {
     fn insert_or_update(&self, key: String, value: String) -> HashMap<String, Vec<String>>;
 }
 
-impl CommandHashSetExt for HashMap<String, Vec<String>> {
-    fn insert_or_update(&self, key: String, value: String) -> HashMap<String, Vec<String>> {
-        let mut new_map = self.clone();
-        if let Some(values) = new_map.get_mut(&key) {
-            values.push(value);
-        } else {
-            new_map.insert(key, vec![value]);
+/*impl SlashCommand {
+    pub fn to_poise_command(self) -> Command<(), Error> {
+        Command {
+            name: self.name.into(),
+            description: self.description,
+            slash_action: Some(self.action),
+            ..Default::default()
         }
-        new_map
     }
-}
+}*/
