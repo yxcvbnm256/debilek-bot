@@ -1,47 +1,38 @@
-use std::collections::HashMap;
 use std::{env, fs};
+use std::collections::HashMap;
 use std::path::PathBuf;
-use anyhow::anyhow;
-use poise::{ApplicationContext, BoxFuture, Command, CommandParameterChoice, SlashArgError};
-use poise::serenity_prelude::{AutocompleteChoice, CommandOptionType, CreateAutocompleteResponse, ResolvedOption, ResolvedValue};
-use poise::serenity_prelude::json::to_string;
+use once_cell::sync::Lazy;
+use poise::{ApplicationContext, BoxFuture, Command, SlashArgError};
+use poise::serenity_prelude::{AutocompleteChoice, CommandOptionType, CreateAutocompleteResponse};
 use reqwest::Client;
 use songbird::input::Input;
-use songbird::serenity;
-use crate::asset_processing::get_asset_file;
-use crate::asset_processing::franta_autocomplete;
-use crate::asset_processing::dufka_autocomplete;
-use crate::asset_processing::zesrane_autocomplete;
-use crate::asset_processing::misc_autocomplete;
-use crate::asset_processing::cojetypico_autocomplete;
-use crate::asset_processing::dota_autocomplete;
-use crate::enums::AssetClass;
-use crate::types::{Context, Data, Error};
+use crate::types::{CommandInfo, Context, Data, Error};
 use crate::voice::play;
 
-/*/// Plays stupid voice stuff
+/// Plays stupid voice stuff
 #[poise::command(slash_command, prefix_command)]
 pub async fn sound(
     ctx: Context<'_>,
-    #[description = "What to be played"] text: String,
-    #[description = "In which language (en, pl, ...)"] lang: Option<String>,
+    #[description = "What to be played"]
+    text: String,
+    #[description = "In which language"]
+    lang: Option<String>,
+    #[description = "Gender"] gender: Option<String>,
 ) -> Result<(), Error> {
-
     let client = Client::new();
-
-    let key = env::var("TTS_KEY")
-        .expect("TTS key not set.");
+    let tts_key = env::var("TTS_KEY")?;
+    let tts_url = env::var("TTS_URL")?;
 
     ctx.defer().await?;
     
     let response = client
-        .get("https://texttospeech.responsivevoice.org/v1/text:synthesize")
+        .get(tts_url)
         .query(&[
             ("text", text.clone()),
             ("lang", lang.unwrap_or_else(|| "cs".into())),
-            ("voice", "female".into()),
+            ("gender", gender.unwrap_or_else(|| "female".into())),
             ("engine", "g1".into()),
-            ("key",key),
+            ("key", tts_key),
         ])
         .send()
         .await?
@@ -54,92 +45,14 @@ pub async fn sound(
         },
         Err(e) => {
             println!("{:?}", e.status().unwrap().as_str());
-            Err("Text to speech request failed, sorry.".into())
+            Err("Text to speech request failed.".into())
         }
     }
 }
 
-/// Plays cojetypíčhoo
-#[poise::command(slash_command, prefix_command)]
-pub async fn cojetypico(
-    ctx: Context<'_>,
-    #[description = "What to be played"]
-    #[autocomplete = "cojetypico_autocomplete"]
-    option: String,
-) -> Result<(), Error> {
-    ctx.defer().await?;
-    let asset = get_asset_file(AssetClass::Cojetypico, option.as_str())?;
-    execute_voice_command(ctx, option, asset).await
-}
 
-/// Plays franta
-#[poise::command(slash_command, prefix_command)]
-pub async fn franta(
-    ctx: Context<'_>,
-    #[description = "co chceš přehrát"]
-    #[autocomplete = "franta_autocomplete"]
-    option: String,
-) -> Result<(), Error> {
-    ctx.defer().await?;
-    let asset = get_asset_file(AssetClass::Franta, option.as_str())?;
-    execute_voice_command(ctx, option, asset).await
-}
-
-/// Plays zesrané hajzle
-#[poise::command(slash_command, prefix_command)]
-pub async fn zesrane(
-    ctx: Context<'_>,
-    #[description = "co chceš přehrát"]
-    #[autocomplete = "zesrane_autocomplete"]
-    option: String,
-) -> Result<(), Error> {
-    ctx.defer().await?;
-    let asset = get_asset_file(AssetClass::ZesraneHajzle, option.as_str())?;
-    execute_voice_command(ctx, option, asset).await
-}
-
-/// Plays viktor
-#[poise::command(slash_command, prefix_command)]
-pub async fn dufka(
-    ctx: Context<'_>,
-    #[description = "What to be played"]
-    #[autocomplete = "dufka_autocomplete"]
-    option: String,
-) -> Result<(), Error> {
-    ctx.defer().await?;
-    let asset = get_asset_file(AssetClass::Dufka, option.as_str())?;
-    execute_voice_command(ctx, option, asset).await
-}
-
-/// Plays whatever
-#[poise::command(slash_command, prefix_command)]
-pub async fn misc(
-    ctx: Context<'_>,
-    #[description = "What to be played"]
-    #[autocomplete = "misc_autocomplete"]
-    option: String,
-) -> Result<(), Error> {
-    ctx.defer().await?;
-    let asset = get_asset_file(AssetClass::Misc, option.as_str())?;
-    execute_voice_command(ctx, option, asset).await
-}
-*/
-/// Plays dota bullshit
-#[poise::command(slash_command)]
-pub async fn dota(
-    ctx: Context<'_>,
-    #[description = "What to be played"]
-    #[autocomplete = "dota_autocomplete"]
-    option: String,
-) -> Result<(), Error> {
-    ctx.defer().await?;
-    let asset = get_asset_file(AssetClass::Dota, option.as_str())?;
-    execute_voice_command(ctx, option, asset).await
-}
-
-/// TODO finish this
-pub async fn generic_voice_command(ctx: Context<'_>, text: String, input: songbird::input::Input) -> Result<(), Error> {
-    play(ctx, input).await.or_else(|e| Err(e))?;
+async fn execute_voice_command(ctx: Context<'_>, text: String, input: Input) -> Result<(), Error> {
+    play(ctx, input).await?;
     ctx.send(poise::CreateReply::default()
         .content(text)
         .ephemeral(true)
@@ -147,114 +60,135 @@ pub async fn generic_voice_command(ctx: Context<'_>, text: String, input: songbi
     Ok(())
 }
 
-async fn execute_voice_command(ctx: Context<'_>, text: String, input: songbird::input::Input) -> Result<(), Error> {
-    play(ctx, input).await.or_else(|e| Err(e))?;
-    ctx.send(poise::CreateReply::default()
-        .content(text)
-        .ephemeral(true)
-    ).await?;
-    Ok(())
-}
-
-pub type CommandFuture<'a> = std::pin::Pin<
-    Box<dyn Future<Output = Result<(), poise::FrameworkError<'a, Data, Error>>> + Send + 'a>
->;
-
-pub fn make_audio_handler(
-    //command_name: String,
-) -> for<'a> fn(poise::ApplicationContext<'a, Data, Error>) -> CommandFuture<'a> {
-    fn handler<'a>(
-        ctx: poise::ApplicationContext<'a, Data, Error>,
-    ) -> CommandFuture<'a> {
-        Box::pin(async move {
-            ctx.defer().await;
-            let command = &ctx.command().name;
-            let Some(clip) = get_string_option_from_arg(&ctx.args) else {
-                return Ok(());
+async fn slash_action_generic_command(ctx: Context<'_>, option: Option<String>) -> Result<(), Error> {
+    ctx.defer().await?;
+    let command_name = ctx.command().name.clone();
+    let Some(command_options) = &ctx.data().audio_map.get(&command_name) else {
+        return Err(format!("Command {} asset not found", command_name).into())
+    };
+    
+    let path: Result<&PathBuf, Error> = match command_options { 
+        CommandInfo::Path(path) => {
+            Ok(path)
+        },
+        CommandInfo::Options(options) => {
+            let Some(option_resolved) = option.clone() else {
+                return Err("Missing option.".into())
             };
-            //let clip = ctx.get_string("clip")?.to_string();
+            let Some(path) = options.get(&option_resolved) else {
+                return Err(format!("Option {} not found", option_resolved).into())
+            };
+            
+            Ok(path)
+            
+        }
+    };
+    
+    let data = fs::read(path?.clone())?;
+    let input = songbird::input::Input::from(data);
 
-            let all_clips = &ctx.data().audio_map;
-            if let Some(clip_map) = all_clips.get(command) {
-                if let Some(path) = clip_map.get(clip) {
-                    ctx.say(format!("Would play: {}", path.display())).await;
-                    match fs::read(path.clone()) {
-                        Ok(data) => {
-                            play(Context::from(ctx), songbird::input::Input::from(data)).await;
-                            return Ok(())
-                        },
-                        Err(_) => return Ok(())
-                    }
-                } else {
-                    ctx.say("Clip not found").await;
-                }
-            } else {
-                ctx.say("Category not found").await;
-            }
+    execute_voice_command(ctx, format!("{} {}", command_name, option.unwrap_or("".into())), input).await?;
 
-            return Ok(())
-        })
-    }
-
-    handler
+    Ok(())
 }
 
-fn get_string_option_from_arg<'a>(args: &&[ResolvedOption<'a>]) -> Option<&'a str> {
-    let Some(first) = args.first() else { return None };
-    match first.value {
-        ResolvedValue::String(s) => Some(s),
-        _ => None,
-    }
-}
-
-pub fn make_audio_command(
-    command_name: String,
-    clips: HashMap<String, PathBuf>,
-) -> Command<Data, Error> {
-    let choices: Vec<String> = clips.keys().cloned().collect();
-
-    poise::Command {
+fn create_generic_asset_command_flat(command_name: String) -> Command<Data, Error> {
+    Command {
         identifying_name: command_name.clone(),
         name: command_name.clone(),
         qualified_name: command_name.clone(),
         source_code_name: command_name.clone(),
-        description: Some("Play a clip from this category".into()),
+        description: Some(format!("Plays {}", command_name).into()),
+        ephemeral: true,
+        parameters: vec!(),
+        slash_action: Some(|ctx| Box::pin(async move {
+            slash_action_generic_command(ctx.into(), None)
+                .await
+                .map_err(|error| poise::FrameworkError::new_command(
+                    ctx.into(),
+                    error,
+                ))
+        })),
+        ..Default::default()
+    }
+}
+
+fn create_generic_asset_command_option(command_name: String) -> Command<Data, Error> {
+    Command {
+        identifying_name: command_name.clone(),
+        name: command_name.clone(),
+        qualified_name: command_name.clone(),
+        source_code_name: command_name.clone(),
+        description: Some(format!("Plays {}", command_name).into()),
         ephemeral: true,
         parameters: vec![poise::CommandParameter {
-            name: "clip".into(),
+            name: "option".into(),
             name_localizations: Default::default(),
-            description: Some("Choose a clip".into()),
+            description: Some("Choose an option".into()),
             choices: vec!(),
-            autocomplete_callback: Some(my_autocomplete),
+            autocomplete_callback: Some(generic_asset_command_autocomplete),
             required: true,
             channel_types: None,
             type_setter: Some(|option| option.kind(CommandOptionType::String)),
             description_localizations: Default::default(),
             __non_exhaustive: (),
         }],
+        slash_action: Some(|ctx| Box::pin(async move {
+            let (option,) = poise::parse_slash_args!(ctx.serenity_context, ctx.interaction, ctx.args => ("option": Option<String>))
+                .await
+                .map_err(|error| error.to_framework_error(ctx))?;
 
-        slash_action: Some(make_audio_handler()),
+            slash_action_generic_command(ctx.into(), option)
+                .await
+                .map_err(|error| poise::FrameworkError::new_command(
+                    ctx.into(),
+                    error,
+                ))
+        })),
         ..Default::default()
     }
 }
 
-fn my_autocomplete<'a>(
+/// Creates a generic asset command. The asset is read from the assets folder and has to follow a strict structure
+pub fn create_generic_asset_command(
+    command_name: String,
+    command_info: &CommandInfo
+    
+) -> Command<Data, Error> {
+    match command_info {
+        CommandInfo::Path(_) => {
+            create_generic_asset_command_flat(command_name)
+        },
+        CommandInfo::Options(_) => {
+            create_generic_asset_command_option(command_name)
+        }
+    }
+}
+
+fn generic_asset_command_autocomplete<'a>(
     ctx: ApplicationContext<'a, Data, Error>,
     input: &'a str,
 ) -> BoxFuture<'a, Result<CreateAutocompleteResponse, SlashArgError>> {
     Box::pin(async move {
-        println!("Autocomplete called {}", input);
         let command_name = ctx.command().name.clone();
         let all_clips = &ctx.data().audio_map;
         let Some(command_def) = all_clips.get(&command_name) else {
             return Ok(CreateAutocompleteResponse::default())
         };
-        let choices: Vec<_> = command_def
-            .keys()
-            .into_iter()
-            .filter_map(|value| value.contains(input).then(|| AutocompleteChoice::new(value.to_string(), value.to_string())))
-            .collect();
+        match command_def {
+            CommandInfo::Path(_) => {
+                return Ok(CreateAutocompleteResponse::default())
+            },
+            CommandInfo::Options(options) => {
+                let choices: Vec<_> = options
+                    .keys()
+                    .into_iter()
+                    .filter_map(|value| value.contains(input).then(|| AutocompleteChoice::new(value.to_string(), value.to_string())))
+                    .collect();
 
-        Ok(CreateAutocompleteResponse::default().set_choices(choices))
+                Ok(CreateAutocompleteResponse::default().set_choices(choices))
+            }
+        }
+        
     })
 }

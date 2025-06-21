@@ -4,10 +4,11 @@ use std::path::{Path, PathBuf};
 use once_cell::sync::Lazy;
 use songbird::input::Input;
 use crate::enums::AssetClass;
-use crate::types::{Context, Error};
+use crate::types::{CommandInfo, Context, Error};
 use poise::{serenity_prelude as serenity};
+use poise::serenity_prelude::CommandData;
 use rand::seq::IndexedRandom;
-use crate::extensions::{CommandHashSetExt, HashSetExt};
+use crate::extensions::{HashSetExt};
 use walkdir::WalkDir;
 
 static FRANTA_CUS: &str = "franta\\cus.mp3";
@@ -167,19 +168,30 @@ pub fn choose_greetings(user_id: &serenity::UserId) -> Result<Input, Error> {
     }
 }
 
-pub fn discover_audio_structure(base: &Path) -> HashMap<String, HashMap<String, PathBuf>> {
-    let mut map: HashMap<String, HashMap<String, PathBuf>> = HashMap::new();
+pub fn discover_audio_structure(base: &Path) -> HashMap<String, CommandInfo> {
+    let mut map: HashMap<String, CommandInfo> = HashMap::new();
 
-    for entry in WalkDir::new(base).min_depth(2).into_iter().filter_map(Result::ok) {
+    for entry in WalkDir::new(base).min_depth(0).into_iter().filter_map(Result::ok) {
         let path = entry.path();
-        if path.extension().map(|e| e == "mp3").unwrap_or(false) {
+        if path.extension().is_some() {
             if let Some(folder) = path.parent().and_then(|p| p.strip_prefix(base).ok()) {
-                let command_name = folder.to_string_lossy().to_string();
+                let folder_name = folder.to_string_lossy().to_string();
                 let file_stem = path.file_stem().unwrap().to_string_lossy().to_string();
-
-                map.entry(command_name.clone())
-                    .or_default()
-                    .insert(file_stem, path.to_path_buf());
+                if folder_name.is_empty() {
+                    map
+                        .entry(file_stem.clone())
+                        .insert_entry(CommandInfo::Path(path.to_path_buf()));
+                } else {
+                    match map.entry(folder_name.clone()).or_default() {
+                        CommandInfo::Path(_) => {
+                            println!("Folder {:?} is clashing with {:?}. Ignoring...", folder_name, file_stem);
+                        },
+                        CommandInfo::Options(options) => {
+                            options.insert(file_stem.clone(), path.to_path_buf());
+                        }
+                    }
+                }
+                
             }
         }
     }

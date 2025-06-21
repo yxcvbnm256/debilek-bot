@@ -7,18 +7,20 @@ use poise::framework::{};
 use songbird::input::Input;
 
 pub struct Data {
-    pub audio_map: HashMap<String, HashMap<String, PathBuf>>, // command -> clip -> path
+    pub audio_map: HashMap<String, CommandInfo>, // command -> clip -> path
+}
+
+pub enum CommandInfo {
+    Options(HashMap<String, PathBuf>),
+    Path(PathBuf),
+}
+
+impl Default for CommandInfo {
+    fn default() -> Self {
+        CommandInfo::Options(HashMap::new())  // or MyData::Path(PathBuf::new())
+    }
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
 pub type Context<'a> = poise::Context<'a, Data, Error>;
-
-type SlashHandler =
-fn(ApplicationContext<'_, (), Error>) -> BoxFuture<'_, Result<(), Error>>;
-
-pub struct SlashCommand {
-    pub name: String,
-    pub description: Option<String>,
-    pub action: fn(poise::ApplicationContext<'_, (), Error>) -> poise::BoxFuture<'_, Result<(), Error>>,
-}

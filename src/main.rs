@@ -4,6 +4,7 @@ mod extensions;
 mod asset_processing;
 mod commands;
 mod voice;
+mod constants;
 
 use std::collections::HashMap;
 use std::env;
@@ -13,7 +14,7 @@ use poise::{serenity_prelude as serenity};
 use songbird::SerenityInit;
 
 use crate::asset_processing::{choose_greetings, discover_audio_structure, visit_dirs};
-use crate::commands::{dota, make_audio_command};
+use crate::commands::{create_generic_asset_command};
 use crate::enums::VoiceChannelAction;
 use crate::types::Error;
 use crate::types::Data;
@@ -31,20 +32,18 @@ async fn main() {
         | serenity::GatewayIntents::MESSAGE_CONTENT
         | serenity::GatewayIntents::GUILD_VOICE_STATES;
 
-    /*let mut asset_map: HashMap<String, Vec<String>> = HashMap::new();
-    visit_dirs(Path::new("./assets"), &mut asset_map).expect("TODO: panic message");
-
-    for (k, v) in asset_map {
-        println!("{}: {:?}", k, v);
-    }*/
-
     let assets_path = Path::new("assets");
     let audio_map = discover_audio_structure(assets_path);
 
     let mut commands: Vec<_> = audio_map
         .iter()
-        .map(|(category, clip_map)| make_audio_command(category.clone(), clip_map.clone()))
+        .map(|(command_name, command_info)| create_generic_asset_command(
+            command_name.clone(),
+            command_info.clone(),
+        ))
         .collect();
+    
+    commands.push(commands::sound());
     
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -57,7 +56,7 @@ async fn main() {
                 commands::misc(),
                 commands::dota(),
             ],*/
-            commands: commands,
+            commands,
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler(ctx, event, framework, data))
             },
