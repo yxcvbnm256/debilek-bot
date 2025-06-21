@@ -21,3 +21,15 @@ serde = { version = "1.0.219", features = ["derive"] }
 [[bin]]
 name = "debilek-bot"
 path = "src/main.rs"
+
+[workspace.metadata.cross.target.aarch64-unknown-linux-gnu]
+# Install libssl-dev:arm64, see <https://github.com/cross-rs/cross/blob/main/docs/custom_images.md#adding-dependencies-to-existing-images>
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get install -y curl unzip build-essential pkg-config libssl-dev:arm64 ca-certificates && rm -rf /var/lib/apt/lists/*",
+    "curl -L https://github.com/Kitware/CMake/releases/download/v3.27.0/cmake-3.27.0-linux-aarch64.tar.gz -o cmake.tar.gz",
+    "tar -xzf cmake.tar.gz",
+    "cp -r cmake-3.27.0-linux-aarch64/bin/* /usr/local/bin/",
+    "cp -r cmake-3.27.0-linux-aarch64/share/* /usr/local/share/",
+    "rm -rf cmake.tar.gz cmake-3.27.0-linux-aarch64"
+]
