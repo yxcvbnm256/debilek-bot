@@ -28,9 +28,6 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build for ARM64 with cross
-        run: cross build --release --target $TARGET
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
