@@ -65,6 +65,7 @@ async fn main() {
                 //poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
                 Ok(Data { audio_map, config })
             })
+            
         })
         .build();
 
