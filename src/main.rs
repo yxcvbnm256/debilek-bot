@@ -41,11 +41,10 @@ async fn main() {
     let assets_path = Path::new("assets");
     let audio_map = discover_audio_structure(assets_path);
 
-    let commands: Vec<_> = audio_map
+    let mut commands: Vec<_> = audio_map
         .iter()
         .map(|(category, clip_map)| make_audio_command(category.clone(), clip_map.clone()))
         .collect();
-    
     
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {

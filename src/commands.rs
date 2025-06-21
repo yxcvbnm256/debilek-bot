@@ -3,7 +3,7 @@ use std::{env, fs};
 use std::path::PathBuf;
 use anyhow::anyhow;
 use poise::{ApplicationContext, BoxFuture, Command, CommandParameterChoice, SlashArgError};
-use poise::serenity_prelude::{CommandOptionType, CreateAutocompleteResponse, ResolvedOption, ResolvedValue};
+use poise::serenity_prelude::{AutocompleteChoice, CommandOptionType, CreateAutocompleteResponse, ResolvedOption, ResolvedValue};
 use poise::serenity_prelude::json::to_string;
 use reqwest::Client;
 use songbird::input::Input;
@@ -161,16 +161,15 @@ pub type CommandFuture<'a> = std::pin::Pin<
 >;
 
 pub fn make_audio_handler(
-    command_name: String,
+    //command_name: String,
 ) -> for<'a> fn(poise::ApplicationContext<'a, Data, Error>) -> CommandFuture<'a> {
     fn handler<'a>(
         ctx: poise::ApplicationContext<'a, Data, Error>,
     ) -> CommandFuture<'a> {
         Box::pin(async move {
             ctx.defer().await;
-            println!("Audio command called");
             let command = &ctx.command().name;
-            let Some(clip) = get_string_from_resolved(&ctx.args) else {
+            let Some(clip) = get_string_option_from_arg(&ctx.args) else {
                 return Ok(());
             };
             //let clip = ctx.get_string("clip")?.to_string();
@@ -200,7 +199,7 @@ pub fn make_audio_handler(
     handler
 }
 
-fn get_string_from_resolved<'a>(args: &&[ResolvedOption<'a>]) -> Option<&'a str> {
+fn get_string_option_from_arg<'a>(args: &&[ResolvedOption<'a>]) -> Option<&'a str> {
     let Some(first) = args.first() else { return None };
     match first.value {
         ResolvedValue::String(s) => Some(s),
@@ -225,22 +224,16 @@ pub fn make_audio_command(
             name: "clip".into(),
             name_localizations: Default::default(),
             description: Some("Choose a clip".into()),
-            /*choices: choices.iter().map(|c| CommandParameterChoice {
-                name: c.to_string(),
-                localizations: Default::default(),
-                __non_exhaustive: (),
-            } ).collect(),*/
             choices: vec!(),
             autocomplete_callback: Some(my_autocomplete),
             required: true,
             channel_types: None,
             type_setter: Some(|option| option.kind(CommandOptionType::String)),
-            //autocomplete_callback: None,
             description_localizations: Default::default(),
             __non_exhaustive: (),
         }],
 
-        slash_action: Some(make_audio_handler(command_name)),
+        slash_action: Some(make_audio_handler()),
         ..Default::default()
     }
 }
@@ -250,8 +243,18 @@ fn my_autocomplete<'a>(
     input: &'a str,
 ) -> BoxFuture<'a, Result<CreateAutocompleteResponse, SlashArgError>> {
     Box::pin(async move {
-        println!("Autocomplete called");
-        let mut response = CreateAutocompleteResponse::default();
-        Ok(response)
+        println!("Autocomplete called {}", input);
+        let command_name = ctx.command().name.clone();
+        let all_clips = &ctx.data().audio_map;
+        let Some(command_def) = all_clips.get(&command_name) else {
+            return Ok(CreateAutocompleteResponse::default())
+        };
+        let choices: Vec<_> = command_def
+            .keys()
+            .into_iter()
+            .filter_map(|value| value.contains(input).then(|| AutocompleteChoice::new(value.to_string(), value.to_string())))
+            .collect();
+
+        Ok(CreateAutocompleteResponse::default().set_choices(choices))
     })
 }
