@@ -16,17 +16,22 @@ use songbird::SerenityInit;
 use crate::asset_processing::{choose_greetings, discover_audio_structure, visit_dirs};
 use crate::commands::{create_generic_asset_command};
 use crate::enums::VoiceChannelAction;
-use crate::types::Error;
+use crate::types::{Config, Error};
 use crate::types::Data;
 use crate::voice::{get_voice_channel_action, play_serenity};
 
 
+
 #[tokio::main]
 async fn main() {
-    let songbird = songbird::Songbird::serenity();
     dotenv().ok();
     let token = env::var("DISCORD_TOKEN")
         .expect("Invalid discord token.");
+    
+    let config_raw = env::var("CONFIG").expect("Config not provided.");
+    let config: Config = serde_json::from_str(&config_raw).unwrap();
+    let songbird = songbird::Songbird::serenity();
+    
     let intents = serenity::GatewayIntents::GUILDS
         | serenity::GatewayIntents::GUILD_MESSAGES
         | serenity::GatewayIntents::MESSAGE_CONTENT
@@ -47,15 +52,6 @@ async fn main() {
     
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            /*commands: vec![
-                commands::sound(),
-                commands::franta(),
-                commands::zesrane(),
-                commands::dufka(),
-                commands::cojetypico(),
-                commands::misc(),
-                commands::dota(),
-            ],*/
             commands,
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler(ctx, event, framework, data))
@@ -64,10 +60,10 @@ async fn main() {
         })
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
-                //poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 // test for test guild
-                poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
-                Ok(Data { audio_map })
+                //poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
+                Ok(Data { audio_map, config })
             })
         })
         .build();
@@ -83,7 +79,7 @@ async fn event_handler(
     ctx: &serenity::Context,
     event: &serenity::FullEvent,
     _framework: poise::FrameworkContext<'_, Data, Error>,
-    _data: &Data,
+    data: &Data,
 ) -> Result<(), Error> {
     match event {
         serenity::FullEvent::Ready { data_about_bot, .. } => {
@@ -98,7 +94,7 @@ async fn event_handler(
                 // greet the user
                 VoiceChannelAction::UserJoined => {
                     println!("User {:?} joined voice channel {:?}.", new.user_id, new.channel_id);
-                    let src = choose_greetings(&new.user_id)?;
+                    let src = choose_greetings(&new.user_id, data)?;
                     let res = play_serenity(ctx, new, src).await;
                     return res
                 },

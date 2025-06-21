@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use once_cell::sync::Lazy;
 use songbird::input::Input;
 use crate::enums::AssetClass;
-use crate::types::{CommandInfo, Context, Error};
+use crate::types::{CommandInfo, Context, Data, Error, GreetingCommand};
 use poise::{serenity_prelude as serenity};
 use poise::serenity_prelude::CommandData;
 use rand::seq::IndexedRandom;
@@ -132,40 +132,42 @@ static USER_GREETINGS: Lazy<HashMap<u64, Vec<&'static str>>> = Lazy::new(|| {
     HashMap::from([
         (419115472471064576, vec![DUFKA_RASTAFA, MISC_PANEMACO]), // maca
         (419115479551180820, vec![MISC_STAVO]), // verca
-        //(serenity::UserId::from(450691668740669450), vec!["./assets/franta/servus.mp3"]), // ja
+        (450691668740669450, vec!["aco"]), // ja
     ])
 });
 
-/// Gets an asset file to play.
-pub fn get_asset_file(asset_class: AssetClass, asset_name: &str) -> Result<Input, Error> {
-    let asset = match asset_class {
-        AssetClass::Franta => FRANTA_ASSETS.get(asset_name),
-        AssetClass::Dufka => DUFKA_ASSETS.get(asset_name),
-        AssetClass::Cojetypico => COJETYPICO_ASSETS.get(asset_name),
-        AssetClass::Misc => MISC_ASSETS.get(asset_name),   
-        AssetClass::ZesraneHajzle => ZESRANE_ASSETS.get(asset_name),
-        AssetClass::Dota => DOTA_ASSETS.get(asset_name),
-    };
-    
-    let Some(asset) = asset else { return Err("Tohle tu nemám, debílku.".into()) };
-    get_input(asset)
-}
-
 
 /// Chooses a greeting of an incoming user. If the user has no pre-defined greetings, chooses a random one.
-pub fn choose_greetings(user_id: &serenity::UserId) -> Result<Input, Error> {
+pub fn choose_greetings(user_id: &serenity::UserId, data: &Data) -> Result<Input, Error> {
+    let Some(greetings_fallback) = data.config.greetings.get("_fallback") else {
+        return Err("No fallback greetings defined.".into());
+    };
+    
+    let choices = data.config.greetings
+        .get(user_id.to_string().as_str())
+        .unwrap_or(greetings_fallback);
     let mut rng = rand::rng();
-    let used_id_int = user_id.get();
-    match USER_GREETINGS.get(&used_id_int) {
-        Some(values) => {
-            let asset = values.choose(&mut rng).unwrap();
-            get_input(asset)
+    let choice = choices.choose(&mut rng).unwrap();
+    
+    let Some(command) = data.audio_map.get(choice.command.as_str()) else {
+        return Err(format!("No such asset - {}", choice.command).into());
+    };
+    let path: &PathBuf = match command {
+        CommandInfo::Path(path) => {
+            Ok::<&PathBuf, Error>(path)
         },
-        None => {
-            let asset = RANDOM_GREETINGS.choose(&mut rng).unwrap();
-            get_input(asset)
+        CommandInfo::Options(options) => {
+            let Some(option) = &choice.option else {
+                return Err("No option specified.".into())
+            };
+            
+            let Some(path) = options.get(option) else {
+                return Err(format!("No such option - {}", option).into())
+            };
+            Ok(path)
         }
-    }
+    }?;
+    get_input(path)
 }
 
 pub fn discover_audio_structure(base: &Path) -> HashMap<String, CommandInfo> {
@@ -190,8 +192,7 @@ pub fn discover_audio_structure(base: &Path) -> HashMap<String, CommandInfo> {
                             options.insert(file_stem.clone(), path.to_path_buf());
                         }
                     }
-                }
-                
+                }                
             }
         }
     }
@@ -199,11 +200,8 @@ pub fn discover_audio_structure(base: &Path) -> HashMap<String, CommandInfo> {
     map
 }
 
-fn get_input(asset_name: &str) -> Result<Input, Error> {
+fn get_input(path: &PathBuf) -> Result<Input, Error> {
     println!("Current dir: {:?}", env::current_dir()?);
-    let mut path = env::current_dir()?;
-    path.push("assets");
-    path.push(asset_name);
     match fs::read(path.clone()) {
         Ok(data) => Ok(songbird::input::Input::from(data)),
         Err(_) => Err(format!("File {} not found.", path.to_string_lossy()).into())
