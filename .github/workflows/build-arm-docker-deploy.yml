@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies for Cross
         run: |
           sudo apt-get update
-          sudo apt-get install -y libssl-dev pkg-config
+          sudo apt-get install -y libssl-dev:arm64 pkg-config
           cargo install cross
 
       - name: Cross build
