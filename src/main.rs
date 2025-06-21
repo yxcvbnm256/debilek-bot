@@ -29,6 +29,7 @@ async fn main() {
         .expect("Invalid discord token.");
     
     let config_raw = env::var("CONFIG").expect("Config not provided.");
+    println!("{}", config_raw);
     let config: Config = serde_json::from_str(&config_raw).unwrap();
     let songbird = songbird::Songbird::serenity();
     
