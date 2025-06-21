@@ -27,6 +27,7 @@ jobs:
 
       - name: Install dependencies for Cross
         run: |
+          apt-get update && apt-get install -y curl unzip build-essential pkg-config libssl-dev:arm64 ca-certificates
           cargo install cross
           cross build --target aarch64-unknown-linux-gnu --release
 
