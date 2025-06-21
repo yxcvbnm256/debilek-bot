@@ -1,0 +1,21 @@
+FROM debian:bookworm-slim AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy ARM64 binary (cross-compiled outside Docker)
+COPY ./target/aarch64-unknown-linux-gnu/release/debilek-bot /usr/local/bin/debilek-bot
+RUN chmod +x /usr/local/bin/debilek-bot
+
+# Copy runtime files (assets and .env)
+COPY ./assets ./assets
+COPY .env .env
+
+# Open port (optional, useful for server)
+EXPOSE 3000
+
+# Entrypoint to run the bot
+ENTRYPOINT ["/usr/local/bin/debilek-bot"]

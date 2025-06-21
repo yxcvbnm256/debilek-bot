@@ -2,9 +2,9 @@ name: Build and Deploy Docker
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ unused ]
   push:
-    branches: [ main ]
+    branches: [ unused ]
 
 jobs:
   docker-build:
@@ -27,8 +27,8 @@ jobs:
         run: |
           echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" >> .env
           echo "TTS_KEY=${{ secrets.TTS_KEY }}" >> .env
-          echo "TTS_URL=${{ vars.TTS_KEY }}" >> .env
-          echo "CONFIG=${{ vars.TTS_KEY }}" >> .env
+          echo "TTS_URL=${{ vars.URL }}" >> .env
+          echo "CONFIG=${{ vars.CONFIG }}" >> .env
 
       - name: Build Docker Image (PR or Push)
         uses: docker/build-push-action@v5
