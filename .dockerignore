@@ -1,3 +1,4 @@
 target
 .git
 Dockerfile
+!target/aarch64-unknown-linux-gnu/release/debilek-bot
