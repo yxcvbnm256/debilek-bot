@@ -26,7 +26,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install dependencies for Cross
-        run: apt-get update && apt-get install -y openssl-dev && cargo install cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config
+          cargo install cross
 
       - name: Cross build
         run: cross build --target aarch64-unknown-linux-gnu --release
