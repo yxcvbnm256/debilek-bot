@@ -521,6 +521,8 @@ dependencies = [
  "poise",
  "rand 0.9.1",
  "reqwest 0.12.19",
+ "serde",
+ "serde_json",
  "songbird",
  "symphonia",
  "tokio",

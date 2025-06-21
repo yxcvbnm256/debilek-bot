@@ -9,12 +9,16 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     pkg-config
 
-# Install CMake 3.27.0
-RUN curl -L https://github.com/Kitware/CMake/releases/download/v3.27.0/cmake-3.27.0-linux-x86_64.tar.gz -o cmake.tar.gz && \
+# ➕ Add ARM64 support
+RUN dpkg --add-architecture arm64 && \
+    apt-get update && \
+    apt-get install -y libc6:arm64
+
+RUN curl -L https://github.com/Kitware/CMake/releases/download/v3.27.0/cmake-3.27.0-linux-aarch64.tar.gz -o cmake.tar.gz && \
     tar -xzf cmake.tar.gz && \
-    cp -r cmake-3.27.0-linux-x86_64/bin/* /usr/local/bin/ && \
-    cp -r cmake-3.27.0-linux-x86_64/share/* /usr/local/share/ && \
-    rm -rf cmake.tar.gz cmake-3.27.0-linux-x86_64
+    cp -r cmake-3.27.0-linux-aarch64/bin/* /usr/local/bin/ && \
+    cp -r cmake-3.27.0-linux-aarch64/share/* /usr/local/share/ && \
+    rm -rf cmake.tar.gz cmake-3.27.0-linux-aarch64
 
 # Copy your source code
 COPY . .
