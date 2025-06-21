@@ -8,12 +8,12 @@ RUN apt-get update && apt-get install -y libssl-dev:arm64 ca-certificates && rm 
 WORKDIR /app
 
 # Copy binary
-COPY  ./target/aarch64-unknown-linux-gnu/release/debilek-bot /usr/local/bin/debilek-bot
+COPY ./target/aarch64-unknown-linux-gnu/release/debilek-bot /usr/local/bin/debilek-bot
 RUN chmod +x /usr/local/bin/debilek-bot
 
-# Copy runtime files (assets and .env)
-COPY --from=builder /usr/src/debilek-bot/assets ./assets
-COPY --from=builder /usr/src/debilek-bot/.env ./.env
+# Copy additional required files
+COPY ./assets ./assets
+COPY ./.env ./.env
 
 EXPOSE 3000
 
