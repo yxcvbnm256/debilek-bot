@@ -40,15 +40,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Generate .env File
-        if: github.event_name == 'push'
-        run: |
-          echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" >> .env
-          echo "TTS_KEY=${{ secrets.TTS_KEY }}" >> .env
-          echo "TTS_URL=${{ vars.TTS_URL }}" >> .env
-          echo "CONFIG=${{ vars.CONFIG }}" >> .env
-
-      
+      - name: Make .env file
+        uses: SpicyPizza/create-envfile@v2.0
+        with:
+          envkey_DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          envkey_TTS_KEY: ${{ secrets.TTS_KEY }}
+          envkey_TTS_URL: ${{ vars.TTS_URL }}
+          envkey_CONFIG: ${{ vars.CONFIG }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
