@@ -1,7 +1,7 @@
 use crate::types::{Context, Error};
 use crate::extensions::{ContextExt};
 use poise::{serenity_prelude as serenity};
-use poise::serenity_prelude::VoiceState;
+use poise::serenity_prelude::{GuildId, VoiceState};
 use songbird::input::Input;
 use crate::enums::VoiceChannelAction;
 
@@ -9,9 +9,10 @@ use crate::enums::VoiceChannelAction;
 pub async fn play_serenity(
     ctx: &serenity::Context,
     voice_channel: &VoiceState,
+    guild_id: Option<GuildId>,
     input: Input,
 ) -> Result<(), Error> {
-    let Some(guild_id) = voice_channel.guild_id else { return Err("No guild ID.".into())};
+    let Some(guild_id) = guild_id.or_else(|| voice_channel.guild_id) else { return Err("No guild ID.".into())};
     let Some(channel_id) = voice_channel.channel_id else { return Err("No channel ID.".into())};
     let manager = songbird::get(&ctx)
         .await
@@ -36,8 +37,8 @@ pub async fn play(
     ctx: Context<'_>,
     input: Input,
 ) -> Result<(), Error> {
-    let voice_channel = ctx.get_voice_channel().or_else(|e| Err(e))?;
-    play_serenity(ctx.serenity_context(), &voice_channel, input).await
+    let (voice_channel, guild_id) = ctx.get_voice_channel().or_else(|e| Err(e))?;
+    play_serenity(ctx.serenity_context(), &voice_channel, Some(guild_id), input).await
 }
 
 /// Determines the action that should be taken when a VoiceStateUpdate occurs.

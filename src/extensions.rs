@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 use poise::Command;
-use poise::serenity_prelude::VoiceState;
+use poise::serenity_prelude::{GuildId, VoiceState};
 use crate::types::{Error, Context};
 
 pub trait ContextExt {
-    fn get_voice_channel(&self) -> Result<VoiceState, Error>;
+    fn get_voice_channel(&self) -> Result<(VoiceState, GuildId), Error>;
 }
 
 impl ContextExt for Context<'_> {
     /// Gets the data about a voice channel from a command context.
-    fn get_voice_channel(&self) -> Result<VoiceState, Error> {
+    /// TODO handle the guild id
+    fn get_voice_channel(&self) -> Result<(VoiceState, GuildId), Error> {
         let user_id = self.author().id;
         let guild = if let Some(guild_ref) = self.guild() {
             guild_ref.clone()
@@ -21,7 +22,7 @@ impl ContextExt for Context<'_> {
             .iter()
             .filter(|(_key, channel)| channel.user_id == user_id)
             .last() else { return Err("Hele debílku jeden, jednou sem ti to toleroval, ale teď už to vážně není vtipný. Okamžitě se přidej do voice channelu, nebo ti nechám zrušit celej kanál.".into()); };
-        Ok(voice_channel.clone())
+        Ok((voice_channel.clone(), guild.id))
     }
 }
 

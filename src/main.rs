@@ -97,7 +97,7 @@ async fn event_handler(
                 VoiceChannelAction::UserJoined => {
                     println!("User {:?} joined voice channel {:?}.", new.user_id, new.channel_id);
                     let src = choose_greetings(&new.user_id, data)?;
-                    let res = play_serenity(ctx, new, src).await;
+                    let res = play_serenity(ctx, new, None, src).await;
                     return res
                 },
                 // fuck off if nobody in the channel
