@@ -6,6 +6,8 @@ use reqwest::Client;
 use songbird::input::Input;
 use crate::types::{CommandInfo, Context, BotData, Error};
 use crate::voice::play;
+use crate::constants::languages_autocomplete;
+use crate::constants::voices_autocomplete;
 
 /// Plays stupid voice stuff
 #[poise::command(slash_command, prefix_command)]
@@ -14,7 +16,9 @@ pub async fn sound(
     #[description = "What to be played"]
     text: String,
     #[description = "In which language"]
+    #[autocomplete = "languages_autocomplete"]
     lang: Option<String>,
+    #[autocomplete = "voices_autocomplete"]
     #[description = "Gender"] gender: Option<String>,
 ) -> Result<(), Error> {
     let client = Client::new();

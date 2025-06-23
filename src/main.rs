@@ -65,7 +65,7 @@ async fn main() {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 // test for test guild
-                //poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
+                // poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
                 Ok(BotData { audio_map, config })
             })
             
@@ -109,7 +109,6 @@ async fn event_handler(
                         .ok_or_else(|| "Failed to get Songbird voice client.")?;
 
                     // unwrap is safe because get_voice_channel_action checks for this
-                    // anyway TODO think about better solution
                     let channel_id = old.as_ref().unwrap().channel_id.unwrap();
                     let guild_id = new.guild_id.unwrap();
                     match manager.leave(guild_id).await {

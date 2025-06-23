@@ -25,12 +25,6 @@ pub enum CommandInfo {
     Path(PathBuf),
 }
 
-impl Default for CommandInfo {
-    fn default() -> Self {
-        CommandInfo::Options(HashMap::new())  // or MyData::Path(PathBuf::new())
-    }
-}
-
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
 pub type Context<'a> = poise::Context<'a, BotData, Error>;
