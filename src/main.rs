@@ -1,23 +1,22 @@
 mod types;
 mod enums;
-mod extensions;
+mod traits;
 mod asset_processing;
 mod commands;
 mod voice;
 mod constants;
 
-use std::collections::HashMap;
 use std::env;
 use std::path::Path;
 use dotenv::dotenv;
 use poise::{serenity_prelude as serenity};
 use songbird::SerenityInit;
 
-use crate::asset_processing::{choose_greetings, discover_audio_structure, visit_dirs};
+use crate::asset_processing::{choose_greetings, discover_audio_structure};
 use crate::commands::{create_generic_asset_command};
 use crate::enums::VoiceChannelAction;
 use crate::types::{Config, Error};
-use crate::types::Data;
+use crate::types::BotData;
 use crate::voice::{get_voice_channel_action, play_serenity};
 
 
@@ -28,9 +27,10 @@ async fn main() {
     let token = env::var("DISCORD_TOKEN")
         .expect("Invalid discord token.");
     
-    let config_raw = env::var("CONFIG").expect("Config not provided.");
-    println!("{}", config_raw);
+    let config_raw = env::var("CONFIG")
+        .expect("Config not provided.");
     let config: Config = serde_json::from_str(&config_raw).unwrap();
+    
     let songbird = songbird::Songbird::serenity();
     
     let intents = serenity::GatewayIntents::GUILDS
@@ -41,14 +41,16 @@ async fn main() {
     let assets_path = Path::new("assets");
     let audio_map = discover_audio_structure(assets_path);
 
+    // Create dynamic commands from audio asset map
     let mut commands: Vec<_> = audio_map
         .iter()
         .map(|(command_name, command_info)| create_generic_asset_command(
             command_name.clone(),
-            command_info.clone(),
+            command_info,
         ))
         .collect();
     
+    // Add static commands
     commands.push(commands::sound());
     
     let framework = poise::Framework::builder()
@@ -64,7 +66,7 @@ async fn main() {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 // test for test guild
                 //poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
-                Ok(Data { audio_map, config })
+                Ok(BotData { audio_map, config })
             })
             
         })
@@ -80,13 +82,14 @@ async fn main() {
 async fn event_handler(
     ctx: &serenity::Context,
     event: &serenity::FullEvent,
-    _framework: poise::FrameworkContext<'_, Data, Error>,
-    data: &Data,
+    _framework: poise::FrameworkContext<'_, BotData, Error>,
+    data: &BotData,
 ) -> Result<(), Error> {
     match event {
         serenity::FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as {}", data_about_bot.user.name);
         }
+        // Handles greetings - if a user joins a voice channel, play greeting
         serenity::FullEvent::VoiceStateUpdate {old, new} => {
 
             match get_voice_channel_action(old, new, ctx) {
@@ -95,14 +98,12 @@ async fn event_handler(
                 },
                 // greet the user
                 VoiceChannelAction::UserJoined => {
-                    println!("User {:?} joined voice channel {:?}.", new.user_id, new.channel_id);
                     let src = choose_greetings(&new.user_id, data)?;
                     let res = play_serenity(ctx, new, None, src).await;
                     return res
                 },
                 // fuck off if nobody in the channel
                 VoiceChannelAction::UserLeftEmptyChannel => {
-                    println!("User {:?} left voice channel {:?}, which is now empty.", new.user_id, new.channel_id);
                     let manager = songbird::get(ctx)
                         .await
                         .ok_or_else(|| "Failed to get Songbird voice client.")?;

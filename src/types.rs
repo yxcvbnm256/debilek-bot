@@ -1,21 +1,18 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
-use once_cell::sync::Lazy;
-use poise::{ApplicationContext, BoxFuture};
-use poise::framework::{};
-use songbird::input::Input;
 use serde::Deserialize;
 
-pub struct Data {
+pub struct BotData {
     pub audio_map: HashMap<String, CommandInfo>, // command -> clip -> path
-    pub config: Config
+    pub config: Config 
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub greetings: HashMap<String,Vec<GreetingCommand>>
 }
+
+/// Maps a certain asset file to a greeting
 #[derive(Debug, Deserialize)]
 pub struct GreetingCommand {
     pub command: String,
@@ -36,4 +33,4 @@ impl Default for CommandInfo {
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
-pub type Context<'a> = poise::Context<'a, Data, Error>;
+pub type Context<'a> = poise::Context<'a, BotData, Error>;

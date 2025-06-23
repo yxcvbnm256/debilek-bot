@@ -1,12 +1,10 @@
 use std::{env, fs};
-use std::collections::HashMap;
 use std::path::PathBuf;
-use once_cell::sync::Lazy;
 use poise::{ApplicationContext, BoxFuture, Command, SlashArgError};
 use poise::serenity_prelude::{AutocompleteChoice, CommandOptionType, CreateAutocompleteResponse};
 use reqwest::Client;
 use songbird::input::Input;
-use crate::types::{CommandInfo, Context, Data, Error};
+use crate::types::{CommandInfo, Context, BotData, Error};
 use crate::voice::play;
 
 /// Plays stupid voice stuff
@@ -92,7 +90,7 @@ async fn slash_action_generic_command(ctx: Context<'_>, option: Option<String>) 
     Ok(())
 }
 
-fn create_generic_asset_command_flat(command_name: String) -> Command<Data, Error> {
+fn create_generic_asset_command_flat(command_name: String) -> Command<BotData, Error> {
     Command {
         identifying_name: command_name.clone(),
         name: command_name.clone(),
@@ -113,7 +111,7 @@ fn create_generic_asset_command_flat(command_name: String) -> Command<Data, Erro
     }
 }
 
-fn create_generic_asset_command_option(command_name: String) -> Command<Data, Error> {
+fn create_generic_asset_command_option(command_name: String) -> Command<BotData, Error> {
     Command {
         identifying_name: command_name.clone(),
         name: command_name.clone(),
@@ -154,7 +152,7 @@ pub fn create_generic_asset_command(
     command_name: String,
     command_info: &CommandInfo
     
-) -> Command<Data, Error> {
+) -> Command<BotData, Error> {
     match command_info {
         CommandInfo::Path(_) => {
             create_generic_asset_command_flat(command_name)
@@ -166,7 +164,7 @@ pub fn create_generic_asset_command(
 }
 
 fn generic_asset_command_autocomplete<'a>(
-    ctx: ApplicationContext<'a, Data, Error>,
+    ctx: ApplicationContext<'a, BotData, Error>,
     input: &'a str,
 ) -> BoxFuture<'a, Result<CreateAutocompleteResponse, SlashArgError>> {
     Box::pin(async move {

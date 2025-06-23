@@ -1,5 +1,5 @@
 use crate::types::{Context, Error};
-use crate::extensions::{ContextExt};
+use crate::traits::{ContextExt};
 use poise::{serenity_prelude as serenity};
 use poise::serenity_prelude::{GuildId, VoiceState};
 use songbird::input::Input;
@@ -37,7 +37,7 @@ pub async fn play(
     ctx: Context<'_>,
     input: Input,
 ) -> Result<(), Error> {
-    let (voice_channel, guild_id) = ctx.get_voice_channel().or_else(|e| Err(e))?;
+    let (voice_channel, guild_id) = ctx.get_voice_channel_and_guild().or_else(|e| Err(e))?;
     play_serenity(ctx.serenity_context(), &voice_channel, Some(guild_id), input).await
 }
 
