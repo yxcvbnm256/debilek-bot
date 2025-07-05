@@ -1,7 +1,8 @@
 
-# Stage 2: Create a minimal image with just the binary
+# The application is built already with a github action
 FROM debian:bookworm-slim
 
+# Libs necessary 
 RUN apt-get update && apt-get install -y libssl-dev:arm64 ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Set up working directory
