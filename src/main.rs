@@ -39,7 +39,7 @@ async fn main() {
         | serenity::GatewayIntents::GUILD_VOICE_STATES;
 
     let assets_path = Path::new("assets");
-    let audio_map = discover_audio_structure(assets_path);
+    let audio_map = discover_audio_structure(assets_path, config.ignored_commands.clone());
 
     // Create dynamic commands from an audio asset map
     let mut commands: Vec<_> = audio_map

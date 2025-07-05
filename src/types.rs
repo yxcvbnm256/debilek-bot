@@ -9,7 +9,10 @@ pub struct BotData {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub greetings: HashMap<String,Vec<GreetingCommand>>
+    // map of asset commands to greetings
+    pub greetings: HashMap<String,Vec<GreetingCommand>>,
+    // ignored assets, which should not generate commands but can be used for greetings
+    pub ignored_commands: Vec<String>,
 }
 
 /// Maps a certain asset file to a greeting

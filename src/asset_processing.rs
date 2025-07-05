@@ -46,10 +46,11 @@ pub fn choose_greetings(user_id: &serenity::UserId, data: &BotData) -> Result<In
 }
 
 /// Discovers the audio structure of the specified folder. Supported structure:
-/// root audio files -> its own command
-/// subfolder (only level 1) -> command
-/// audio files in subfolder -> command option
-pub fn discover_audio_structure(base: &Path) -> HashMap<String, CommandInfo> {
+/// root audio files -> its own command.
+/// Subfolder (only level 1) -> a command.
+/// Audio files in subfolder -> a command option.
+/// Ignores assets, which are in the ignore_commands config list
+pub fn discover_audio_structure(base: &Path, ignore_commands: Vec<String>) -> HashMap<String, CommandInfo> {
     let mut map: HashMap<String, CommandInfo> = HashMap::new();
 
     for entry in WalkDir::new(base).min_depth(0).into_iter().filter_map(Result::ok) {
@@ -58,11 +59,11 @@ pub fn discover_audio_structure(base: &Path) -> HashMap<String, CommandInfo> {
             if let Some(folder) = path.parent().and_then(|p| p.strip_prefix(base).ok()) {
                 let folder_name = folder.to_string_lossy().to_string();
                 let file_stem = path.file_stem().unwrap().to_string_lossy().to_string();
-                if folder_name.is_empty() {
+                if folder_name.is_empty() && !ignore_commands.contains(&file_stem) {
                     map
                         .entry(file_stem.clone())
                         .insert_entry(CommandInfo::Path(path.to_path_buf()));
-                } else {
+                } else if !ignore_commands.contains(&folder_name) {
                     match map.entry(folder_name.clone()).or_default() {
                         CommandInfo::Path(_) => {
                             println!("Folder {:?} is clashing with {:?}. Ignoring...", folder_name, file_stem);
