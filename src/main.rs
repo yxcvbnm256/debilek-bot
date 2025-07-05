@@ -41,7 +41,7 @@ async fn main() {
     let assets_path = Path::new("assets");
     let audio_map = discover_audio_structure(assets_path);
 
-    // Create dynamic commands from audio asset map
+    // Create dynamic commands from an audio asset map
     let mut commands: Vec<_> = audio_map
         .iter()
         .map(|(command_name, command_info)| create_generic_asset_command(
@@ -52,6 +52,7 @@ async fn main() {
     
     // Add static commands
     commands.push(commands::sound());
+    commands.push(commands::help());
     
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -63,9 +64,9 @@ async fn main() {
         })
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                //poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 // test for test guild
-                // poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
+                poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(769146546905284608)).await?; 
                 Ok(BotData { audio_map, config })
             })
             

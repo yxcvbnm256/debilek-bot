@@ -9,8 +9,8 @@ use crate::voice::play;
 use crate::constants::languages_autocomplete;
 use crate::constants::voices_autocomplete;
 
-/// Plays stupid voice stuff
-#[poise::command(slash_command, prefix_command)]
+/// Plays stupid TTS voice stuff. Additional arguments - language and voice gender.
+#[poise::command(slash_command)]
 pub async fn sound(
     ctx: Context<'_>,
     #[description = "What to be played"]
@@ -50,6 +50,25 @@ pub async fn sound(
             Err("Text to speech request failed.".into())
         }
     }
+}
+
+/// Prints help with all available commands.
+#[poise::command(slash_command)]
+pub async fn help(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    let framework_options = ctx.framework().options();
+    let commands = &framework_options.commands;
+
+    let help_str: Vec<String> = commands.iter().map(|command| {
+        let command_name = command.name.clone();
+        let command_description = command.description.clone().unwrap_or_else(|| "".into());
+        let str = format!("/{} - {}", command_name, command_description);
+        str
+    }).collect();
+
+    ctx.reply(format!("```{}```", help_str.join("\n"))).await?;
+    Ok(())
 }
 
 
@@ -100,7 +119,7 @@ fn create_generic_asset_command_flat(command_name: String) -> Command<BotData, E
         name: command_name.clone(),
         qualified_name: command_name.clone(),
         source_code_name: command_name.clone(),
-        description: Some(format!("Plays {}", command_name).into()),
+        description: Some(format!("Plays {}.", command_name).into()),
         ephemeral: true,
         parameters: vec!(),
         slash_action: Some(|ctx| Box::pin(async move {
@@ -121,7 +140,7 @@ fn create_generic_asset_command_option(command_name: String) -> Command<BotData,
         name: command_name.clone(),
         qualified_name: command_name.clone(),
         source_code_name: command_name.clone(),
-        description: Some(format!("Plays {}", command_name).into()),
+        description: Some(format!("Plays {} with additional options.", command_name).into()),
         ephemeral: true,
         parameters: vec![poise::CommandParameter {
             name: "option".into(),
