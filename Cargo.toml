@@ -5,7 +5,8 @@ edition = "2024"
 
 [dependencies]
 poise = "0.6.1"
-songbird = { version = "0.5.0", default-features = true }
+#songbird = { version = "0.5.0", default-features = true }
+songbird = { git = "https://github.com/jtscuba/songbird", branch = "davey" }
 
 tokio = { version = "1.45.1", features = ["full"] }
 reqwest = { version = "0.12.19", features = ["blocking", "json"] }
@@ -17,6 +18,9 @@ serde_json = "1.0.140"
 serde = { version = "1.0.219", features = ["derive"] }
 symphonia = { version = "0.5.4", features = ["aac", "mp3", "isomp4", "alac"] }
 openssl = { version = "0.10.73", features = ["vendored"] }
+
+[patch.crates-io]
+songbird = { git = "https://github.com/jtscuba/songbird", branch = "davey" }
 
 [dev-dependencies]
 cross = "0.2.5"
